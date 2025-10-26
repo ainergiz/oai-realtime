@@ -20,6 +20,14 @@ export const SessionHero = ({
 }: SessionHeroProps) => {
   return (
     <header className="flex flex-col items-center gap-6 text-center">
+      <div className="flex flex-col items-center gap-2">
+        <h1 className="text-sm font-semibold uppercase tracking-[0.55em] text-white/80">
+          Delfa: Clinical Trial Recruitment
+        </h1>
+        <span className="text-xs hidden md:block uppercase tracking-[0.4em] text-emerald-200/80">
+          Study: Mind Body Intervention for Chronic Migraine Headaches
+        </span>
+      </div>
       <AudioOrb
         inputAnalyser={inputAnalyser}
         outputAnalyser={outputAnalyser}
@@ -30,7 +38,7 @@ export const SessionHero = ({
           type="button"
           onClick={onRecord}
           disabled={status === "connecting" || status === "connected"}
-          className="inline-flex items-center justify-center rounded-full bg-emerald-400 px-6 py-3 text-sm font-semibold uppercase tracking-[0.3em] text-zinc-950 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300 disabled:cursor-not-allowed disabled:bg-emerald-400/40"
+          className="inline-flex items-center justify-center rounded-full bg-emerald-400 px-6 py-3 text-sm font-semibold uppercase tracking-[0.3em] text-zinc-950 transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300 disabled:cursor-not-allowed disabled:bg-emerald-400/40"
         >
           {status === "connecting" ? "Connecting…" : "Start"}
         </button>
@@ -38,7 +46,7 @@ export const SessionHero = ({
           type="button"
           onClick={onStop}
           disabled={status === "idle" || status === "error"}
-          className="inline-flex items-center justify-center rounded-full border border-white/20 px-6 py-3 text-sm font-semibold uppercase tracking-[0.3em] text-white transition hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex items-center justify-center rounded-full border border-white/20 px-6 py-3 text-sm font-semibold uppercase tracking-[0.3em] text-white transition hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:cursor-not-allowed disabled:opacity-50"
         >
           Stop
         </button>

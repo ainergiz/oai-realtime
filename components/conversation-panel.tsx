@@ -41,7 +41,12 @@ export const ConversationPanel = ({
       top: container.scrollHeight,
       behavior: "smooth",
     });
-  }, [messageHistory.length, guardrailState, latestModeration, eligibilitySummary]);
+  }, [
+    messageHistory.length,
+    guardrailState,
+    latestModeration,
+    eligibilitySummary,
+  ]);
 
   return (
     <section className="flex flex-col gap-4 rounded-2xl border border-white/5 bg-zinc-950/40 p-6">
@@ -185,7 +190,7 @@ export const ConversationPanel = ({
         <button
           type="submit"
           disabled={status !== "connected" || inputValue.trim() === ""}
-          className="inline-flex items-center justify-center rounded-lg bg-white px-5 py-3 text-sm font-semibold text-zinc-900 transition hover:bg-white/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:cursor-not-allowed disabled:bg-white/20 disabled:text-white/60"
+          className="inline-flex items-center justify-center rounded-lg bg-white px-5 py-3 text-sm font-semibold text-zinc-900 transition hover:bg-white/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:cursor-not-allowed disabled:bg-white/20 disabled:text-white/60"
         >
           Send
         </button>

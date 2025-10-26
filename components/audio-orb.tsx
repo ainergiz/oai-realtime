@@ -41,6 +41,7 @@ const OrbMesh = ({ inputAnalyser, outputAnalyser, active }: AudioOrbProps) => {
   const inputBufferRef = useRef<ByteFrequencyArray | null>(null);
   const outputBufferRef = useRef<ByteFrequencyArray | null>(null);
   const basePositionsRef = useRef<Float32Array | null>(null);
+  const needsIdleResetRef = useRef(!active);
 
   useEffect(() => {
     inputBufferRef.current = createAnalyserBuffer(inputAnalyser);
@@ -70,8 +71,43 @@ const OrbMesh = ({ inputAnalyser, outputAnalyser, active }: AudioOrbProps) => {
     };
   }, []);
 
+  useEffect(() => {
+    if (!active) {
+      needsIdleResetRef.current = true;
+    }
+  }, [active]);
+
   useFrame((state, delta) => {
-    if (!meshRef.current) {
+    const mesh = meshRef.current;
+    if (!mesh) {
+      return;
+    }
+
+    const geometry = mesh.geometry as THREE.BufferGeometry;
+    const positions = geometry.getAttribute("position");
+    const basePositions = basePositionsRef.current;
+
+    if (!active) {
+      if (needsIdleResetRef.current && positions && basePositions) {
+        const arr = positions.array as Float32Array;
+        arr.set(basePositions);
+        positions.needsUpdate = true;
+        geometry.computeVertexNormals();
+
+        mesh.scale.setScalar(1);
+        mesh.rotation.set(0, 0, 0);
+
+        const material = mesh.material as THREE.MeshStandardMaterial;
+        material.color.set("#48d0ff");
+        material.emissive.set("#0b1426");
+        material.emissiveIntensity = 0.5;
+
+        state.scene.rotation.set(0, 0, 0);
+        state.camera.position.set(0, 0, 3.6);
+        state.camera.lookAt(0, 0, 0);
+
+        needsIdleResetRef.current = false;
+      }
       return;
     }
 
@@ -86,23 +122,19 @@ const OrbMesh = ({ inputAnalyser, outputAnalyser, active }: AudioOrbProps) => {
       0.2,
     );
     const intensity = Math.max(inputLevel, outputLevel);
-    const targetScale = 1 + intensity * 0.45;
-    const targetRotation = 0.3 + intensity * 0.9;
+    const easedIntensity = intensity / (1 + intensity * 0.8);
+    const targetScale = 1 + easedIntensity * 0.3;
+    const targetRotation = 0.25 + easedIntensity * 0.6;
 
-    const geometry = meshRef.current.geometry as THREE.BufferGeometry;
-    const positions = geometry.getAttribute("position");
-    const basePositions = basePositionsRef.current;
     if (positions && basePositions) {
       const arr = positions.array as Float32Array;
-      const time = state.clock.elapsedTime * 1.6;
-      const spikeStrength = 0.18 + intensity * 0.55;
+      const time = state.clock.elapsedTime * 1.4;
+      const spikeStrength = 0.16 + easedIntensity * 0.35;
       for (let index = 0; index < arr.length; index += 3) {
         const baseX = basePositions[index];
         const baseY = basePositions[index + 1];
         const baseZ = basePositions[index + 2];
-        const radius = Math.sqrt(
-          baseX * baseX + baseY * baseY + baseZ * baseZ,
-        );
+        const radius = Math.sqrt(baseX * baseX + baseY * baseY + baseZ * baseZ);
         if (radius === 0) {
           continue;
         }
@@ -110,7 +142,7 @@ const OrbMesh = ({ inputAnalyser, outputAnalyser, active }: AudioOrbProps) => {
         const normY = baseY / radius;
         const normZ = baseZ / radius;
         const wave =
-          Math.sin(time + index * 0.015) * 0.08 * (1 + intensity * 0.6);
+          Math.sin(time + index * 0.015) * 0.06 * (1 + easedIntensity * 0.4);
         const spike = radius + spikeStrength + wave;
         arr[index] = normX * spike;
         arr[index + 1] = normY * spike;
@@ -120,7 +152,7 @@ const OrbMesh = ({ inputAnalyser, outputAnalyser, active }: AudioOrbProps) => {
       geometry.computeVertexNormals();
     }
 
-    const currentScale = meshRef.current.scale.x;
+    const currentScale = mesh.scale.x;
     const lerpFactor = THREE.MathUtils.clamp(delta * 4, 0, 1);
     const nextScale = THREE.MathUtils.lerp(
       currentScale,
@@ -128,28 +160,28 @@ const OrbMesh = ({ inputAnalyser, outputAnalyser, active }: AudioOrbProps) => {
       lerpFactor,
     );
 
-    meshRef.current.scale.setScalar(nextScale);
-    meshRef.current.rotation.x += delta * (0.4 + inputLevel * 1.4);
-    meshRef.current.rotation.y += delta * (0.3 + outputLevel * 1.2);
-    meshRef.current.rotation.z += delta * (0.2 + inputLevel * 0.8);
+    mesh.scale.setScalar(nextScale);
+    mesh.rotation.x += delta * (0.32 + easedIntensity * 0.9);
+    mesh.rotation.y += delta * (0.26 + easedIntensity * 0.75);
+    mesh.rotation.z += delta * (0.18 + easedIntensity * 0.6);
 
-    const material = meshRef.current.material as THREE.MeshStandardMaterial;
-    material.emissiveIntensity = 0.4 + intensity * 1.6;
-    material.color.setHSL(0.54, 0.65, 0.45 + intensity * 0.2);
-    material.emissive.setHSL(0.5, 0.85, 0.4 + intensity * 0.3);
+    const material = mesh.material as THREE.MeshStandardMaterial;
+    material.emissiveIntensity = 0.45 + easedIntensity * 1.1;
+    material.color.setHSL(0.54, 0.62, 0.44 + easedIntensity * 0.16);
+    material.emissive.setHSL(0.5, 0.8, 0.38 + easedIntensity * 0.22);
 
     const camera = state.camera;
     camera.position.lerp(
       new THREE.Vector3(
-        Math.sin(state.clock.elapsedTime * 0.3) * 1.6,
-        Math.cos(state.clock.elapsedTime * 0.2) * 1.1,
-        3.4 + intensity * 0.5,
+        Math.sin(state.clock.elapsedTime * 0.3) * (1.3 + easedIntensity * 0.5),
+        Math.cos(state.clock.elapsedTime * 0.2) * (0.9 + easedIntensity * 0.4),
+        3.4 + easedIntensity * 0.35,
       ),
       lerpFactor,
     );
     camera.lookAt(0, 0, 0);
 
-    state.scene.rotation.y += delta * (0.05 + targetRotation * 0.05);
+    state.scene.rotation.y += delta * (0.045 + targetRotation * 0.04);
   });
 
   const geom = useMemo(() => new THREE.IcosahedronGeometry(1.2, 4), []);
@@ -165,20 +197,12 @@ const OrbMesh = ({ inputAnalyser, outputAnalyser, active }: AudioOrbProps) => {
     [],
   );
 
-  useEffect(() => {
-    if (meshRef.current) {
-      meshRef.current.visible = active;
-    }
-  }, [active]);
-
-  return (
-    <mesh ref={meshRef} geometry={geom} material={material} />
-  );
+  return <mesh ref={meshRef} geometry={geom} material={material} />;
 };
 
 export const AudioOrb = (props: AudioOrbProps) => {
   return (
-    <div className="relative isolate h-56 w-56 overflow-hidden rounded-full border border-white/10 bg-gradient-to-br from-emerald-500/10 via-sky-500/10 to-purple-500/10 shadow-[0_0_30px_rgba(72,255,220,0.22)] sm:h-72 sm:w-72">
+    <div className="relative isolate h-40 w-40 overflow-hidden rounded-full border border-white/10 bg-linear-to-br from-emerald-500/12 via-sky-500/12 to-purple-500/12 shadow-[0_0_18px_rgba(72,255,220,0.22)] sm:h-52 sm:w-52">
       <Canvas
         gl={{
           antialias: true,
