@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 const OPENAI_REALTIME_URL = "https://api.openai.com/v1/realtime/client_secrets";
 const DEFAULT_REALTIME_MODEL =
-  process.env.OPENAI_REALTIME_MODEL ?? "gpt-realtime";
+  process.env.NEXT_PUBLIC_OPENAI_REALTIME_MODEL ?? "gpt-realtime-mini";
 
 type ClientSecretResponse = {
   id: string;

@@ -38,9 +38,9 @@ const calculateLevel = (
 
 const OrbMesh = ({ inputAnalyser, outputAnalyser, active }: AudioOrbProps) => {
   const meshRef = useRef<THREE.Mesh>(null);
-  const glowRef = useRef<THREE.PointLight>(null);
   const inputBufferRef = useRef<ByteFrequencyArray | null>(null);
   const outputBufferRef = useRef<ByteFrequencyArray | null>(null);
+  const basePositionsRef = useRef<Float32Array | null>(null);
 
   useEffect(() => {
     inputBufferRef.current = createAnalyserBuffer(inputAnalyser);
@@ -55,6 +55,20 @@ const OrbMesh = ({ inputAnalyser, outputAnalyser, active }: AudioOrbProps) => {
       outputBufferRef.current = null;
     };
   }, [outputAnalyser]);
+
+  useEffect(() => {
+    if (!meshRef.current) {
+      return;
+    }
+    const geometry = meshRef.current.geometry as THREE.BufferGeometry;
+    const position = geometry.getAttribute("position");
+    basePositionsRef.current = position
+      ? Float32Array.from(position.array as Float32Array)
+      : null;
+    return () => {
+      basePositionsRef.current = null;
+    };
+  }, []);
 
   useFrame((state, delta) => {
     if (!meshRef.current) {
@@ -72,8 +86,39 @@ const OrbMesh = ({ inputAnalyser, outputAnalyser, active }: AudioOrbProps) => {
       0.2,
     );
     const intensity = Math.max(inputLevel, outputLevel);
-    const targetScale = 1 + intensity * 0.75;
+    const targetScale = 1 + intensity * 0.45;
     const targetRotation = 0.3 + intensity * 0.9;
+
+    const geometry = meshRef.current.geometry as THREE.BufferGeometry;
+    const positions = geometry.getAttribute("position");
+    const basePositions = basePositionsRef.current;
+    if (positions && basePositions) {
+      const arr = positions.array as Float32Array;
+      const time = state.clock.elapsedTime * 1.6;
+      const spikeStrength = 0.18 + intensity * 0.55;
+      for (let index = 0; index < arr.length; index += 3) {
+        const baseX = basePositions[index];
+        const baseY = basePositions[index + 1];
+        const baseZ = basePositions[index + 2];
+        const radius = Math.sqrt(
+          baseX * baseX + baseY * baseY + baseZ * baseZ,
+        );
+        if (radius === 0) {
+          continue;
+        }
+        const normX = baseX / radius;
+        const normY = baseY / radius;
+        const normZ = baseZ / radius;
+        const wave =
+          Math.sin(time + index * 0.015) * 0.08 * (1 + intensity * 0.6);
+        const spike = radius + spikeStrength + wave;
+        arr[index] = normX * spike;
+        arr[index + 1] = normY * spike;
+        arr[index + 2] = normZ * spike;
+      }
+      positions.needsUpdate = true;
+      geometry.computeVertexNormals();
+    }
 
     const currentScale = meshRef.current.scale.x;
     const lerpFactor = THREE.MathUtils.clamp(delta * 4, 0, 1);
@@ -92,10 +137,6 @@ const OrbMesh = ({ inputAnalyser, outputAnalyser, active }: AudioOrbProps) => {
     material.emissiveIntensity = 0.4 + intensity * 1.6;
     material.color.setHSL(0.54, 0.65, 0.45 + intensity * 0.2);
     material.emissive.setHSL(0.5, 0.85, 0.4 + intensity * 0.3);
-
-    if (glowRef.current) {
-      glowRef.current.intensity = 1.2 + intensity * 3.2;
-    }
 
     const camera = state.camera;
     camera.position.lerp(
@@ -131,29 +172,20 @@ const OrbMesh = ({ inputAnalyser, outputAnalyser, active }: AudioOrbProps) => {
   }, [active]);
 
   return (
-    <>
-      <mesh ref={meshRef} geometry={geom} material={material} />
-      <pointLight
-        ref={glowRef}
-        position={[0, 0, 3.5]}
-        intensity={1.2}
-        distance={9}
-        color="#7cf6ff"
-      />
-    </>
+    <mesh ref={meshRef} geometry={geom} material={material} />
   );
 };
 
 export const AudioOrb = (props: AudioOrbProps) => {
   return (
-    <div className="relative isolate h-64 w-64 overflow-hidden rounded-full border border-white/10 bg-gradient-to-br from-emerald-500/10 via-sky-500/10 to-purple-500/10 shadow-[0_0_40px_rgba(72,255,220,0.18)] sm:h-72 sm:w-72">
+    <div className="relative isolate h-72 w-72 overflow-hidden rounded-full border border-white/10 bg-gradient-to-br from-emerald-500/10 via-sky-500/10 to-purple-500/10 shadow-[0_0_40px_rgba(72,255,220,0.18)] sm:h-96 sm:w-96">
       <Canvas
         gl={{
           antialias: true,
           alpha: true,
           powerPreference: "high-performance",
         }}
-        camera={{ position: [0, 0, 3.8], fov: 45 }}
+        camera={{ position: [0, 0, 4.4], fov: 48 }}
       >
         <color attach="background" args={["#05040a"]} />
         <fog attach="fog" args={["#05040a", 6, 12]} />
