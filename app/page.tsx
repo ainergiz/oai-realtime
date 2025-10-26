@@ -14,17 +14,16 @@ import {
   useRef,
   useState,
 } from "react";
-import { SessionHero } from "../components/session-hero";
 import { ConversationPanel } from "../components/conversation-panel";
+import { SessionHero } from "../components/session-hero";
+import { ASSISTANT_INSTRUCTIONS } from "../lib/prompts";
 import {
   createRecruiterTools,
   type EligibilitySummary,
   type GuardrailStateUpdate,
   type ModerationRecord,
 } from "../lib/recruiter-tools";
-import { ASSISTANT_INSTRUCTIONS } from "../lib/prompts";
-import { getMessageCopy } from "../lib/messages";
-import { type MessageItem, type SessionStatus } from "../lib/session-types";
+import type { MessageItem, SessionStatus } from "../lib/session-types";
 
 const REALTIME_MODEL =
   process.env.NEXT_PUBLIC_OPENAI_REALTIME_MODEL ?? "gpt-realtime-mini";
@@ -67,10 +66,10 @@ export default function Home() {
     [history],
   );
   const latestModeration = useMemo(
-    () => (moderationLog.length ? moderationLog[moderationLog.length - 1] : null),
+    () =>
+      moderationLog.length ? moderationLog[moderationLog.length - 1] : null,
     [moderationLog],
   );
-
 
   const cleanupAudio = useCallback(() => {
     inputSourceRef.current?.disconnect();
@@ -328,7 +327,7 @@ export default function Home() {
       setStatus("error");
       resetSession();
     }
-  }, [REALTIME_MODEL, recruiterTools, resetSession, status]);
+  }, [recruiterTools, resetSession, status]);
 
   const disconnect = useCallback(() => {
     resetSession();

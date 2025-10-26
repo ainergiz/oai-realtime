@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type FormEvent } from "react";
+import { type FormEvent, useEffect, useMemo, useRef } from "react";
 import { getMessageCopy } from "../lib/messages";
 import type {
   EligibilitySummary,
@@ -32,21 +32,89 @@ export const ConversationPanel = ({
 }: ConversationPanelProps) => {
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
+  const guardrailViolations = useMemo(() => {
+    if (!guardrailState) {
+      return [];
+    }
+    const counts = new Map<string, number>();
+    return guardrailState.violations.map((violation) => {
+      const count = counts.get(violation) ?? 0;
+      counts.set(violation, count + 1);
+      return {
+        key: `${violation}-${count}`,
+        value: violation,
+      };
+    });
+  }, [guardrailState]);
+
+  const eligibilityReasons = useMemo(() => {
+    if (!eligibilitySummary) {
+      return [];
+    }
+    const counts = new Map<string, number>();
+    return eligibilitySummary.reasons.map((reason) => {
+      const count = counts.get(reason) ?? 0;
+      counts.set(reason, count + 1);
+      return {
+        key: `${reason}-${count}`,
+        value: reason,
+      };
+    });
+  }, [eligibilitySummary]);
+
+  const scrollSignature = useMemo(() => {
+    const guardrailPart = guardrailState
+      ? [
+          guardrailState.state,
+          guardrailState.action,
+          guardrailState.risk_notes ?? "",
+          guardrailState.violations.join("|"),
+        ].join("|")
+      : "guardrail:none";
+    const moderationPart = latestModeration
+      ? [
+          latestModeration.phase,
+          latestModeration.flagged ? "1" : "0",
+          latestModeration.timestamp,
+          latestModeration.text,
+        ].join("|")
+      : "moderation:none";
+    const eligibilityPart = eligibilitySummary
+      ? [
+          eligibilitySummary.eligibility,
+          eligibilitySummary.reasons.join("|"),
+        ].join("|")
+      : "eligibility:none";
+
+    return [
+      messageHistory.length,
+      guardrailPart,
+      moderationPart,
+      eligibilityPart,
+    ].join("::");
+  }, [
+    eligibilitySummary,
+    guardrailState,
+    latestModeration,
+    messageHistory.length,
+  ]);
+
+  const lastScrollSignatureRef = useRef<string | null>(null);
+
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) {
       return;
     }
+    if (lastScrollSignatureRef.current === scrollSignature) {
+      return;
+    }
+    lastScrollSignatureRef.current = scrollSignature;
     container.scrollTo({
       top: container.scrollHeight,
       behavior: "smooth",
     });
-  }, [
-    messageHistory.length,
-    guardrailState,
-    latestModeration,
-    eligibilitySummary,
-  ]);
+  }, [scrollSignature]);
 
   return (
     <section className="flex flex-col gap-4 rounded-2xl border border-white/5 bg-zinc-950/40 p-6">
@@ -96,8 +164,8 @@ export const ConversationPanel = ({
           </div>
           {guardrailState.violations.length > 0 ? (
             <ul className="mt-3 flex list-disc flex-col gap-2 pl-5 text-sm text-amber-100/90">
-              {guardrailState.violations.map((violation, index) => (
-                <li key={`${violation}-${index}`}>{violation}</li>
+              {guardrailViolations.map(({ key, value }) => (
+                <li key={key}>{value}</li>
               ))}
             </ul>
           ) : (
@@ -162,8 +230,8 @@ export const ConversationPanel = ({
             </span>
           </div>
           <ul className="mt-3 flex list-disc flex-col gap-2 pl-5 text-sm text-zinc-200">
-            {eligibilitySummary.reasons.map((reason, index) => (
-              <li key={`${reason}-${index}`}>{reason}</li>
+            {eligibilityReasons.map(({ key, value }) => (
+              <li key={key}>{value}</li>
             ))}
           </ul>
         </div>

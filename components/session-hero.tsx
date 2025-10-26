@@ -1,7 +1,7 @@
 "use client";
 
-import { AudioOrb } from "./audio-orb";
 import type { SessionStatus } from "../lib/session-types";
+import { AudioOrb } from "./audio-orb";
 
 type SessionHeroProps = {
   status: SessionStatus;
