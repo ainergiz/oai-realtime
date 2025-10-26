@@ -178,14 +178,14 @@ const OrbMesh = ({ inputAnalyser, outputAnalyser, active }: AudioOrbProps) => {
 
 export const AudioOrb = (props: AudioOrbProps) => {
   return (
-    <div className="relative isolate h-72 w-72 overflow-hidden rounded-full border border-white/10 bg-gradient-to-br from-emerald-500/10 via-sky-500/10 to-purple-500/10 shadow-[0_0_40px_rgba(72,255,220,0.18)] sm:h-96 sm:w-96">
+    <div className="relative isolate h-56 w-56 overflow-hidden rounded-full border border-white/10 bg-gradient-to-br from-emerald-500/10 via-sky-500/10 to-purple-500/10 shadow-[0_0_30px_rgba(72,255,220,0.22)] sm:h-72 sm:w-72">
       <Canvas
         gl={{
           antialias: true,
           alpha: true,
           powerPreference: "high-performance",
         }}
-        camera={{ position: [0, 0, 4.4], fov: 48 }}
+        camera={{ position: [0, 0, 3.6], fov: 48 }}
       >
         <color attach="background" args={["#05040a"]} />
         <fog attach="fog" args={["#05040a", 6, 12]} />

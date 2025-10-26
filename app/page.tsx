@@ -15,7 +15,6 @@ import {
   useState,
 } from "react";
 import { SessionHero } from "../components/session-hero";
-import { SessionControls } from "../components/session-controls";
 import { ConversationPanel } from "../components/conversation-panel";
 import {
   createRecruiterTools,
@@ -373,17 +372,17 @@ export default function Home() {
       <main className="flex w-full max-w-4xl flex-col gap-8 rounded-3xl border border-white/10 bg-zinc-900/80 p-8 shadow-2xl backdrop-blur-sm">
         <SessionHero
           status={status}
-          modelName={REALTIME_MODEL}
           inputAnalyser={analysers.input}
           outputAnalyser={analysers.output}
+          onRecord={connect}
+          onStop={disconnect}
         />
 
-        <SessionControls
-          status={status}
-          error={error}
-          onConnect={connect}
-          onDisconnect={disconnect}
-        />
+        {error ? (
+          <p className="rounded-xl border border-rose-400/40 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+            {error}
+          </p>
+        ) : null}
 
         <ConversationPanel
           messageHistory={messageHistory}

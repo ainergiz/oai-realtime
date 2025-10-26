@@ -1,42 +1,64 @@
+"use client";
+
 import { AudioOrb } from "./audio-orb";
 import type { SessionStatus } from "../lib/session-types";
 
 type SessionHeroProps = {
   status: SessionStatus;
-  modelName: string;
   inputAnalyser: AnalyserNode | null;
   outputAnalyser: AnalyserNode | null;
+  onRecord: () => void;
+  onStop: () => void;
 };
 
 export const SessionHero = ({
   status,
-  modelName,
   inputAnalyser,
   outputAnalyser,
+  onRecord,
+  onStop,
 }: SessionHeroProps) => {
   return (
-    <header className="flex flex-col gap-8 lg:flex-row lg:items-center">
-      <div className="flex flex-1 flex-col gap-3">
-        <span className="text-sm uppercase tracking-[0.3em] text-emerald-300/80">
-          OpenAI Realtime Quickstart
+    <header className="flex flex-col items-center gap-6 text-center">
+      <AudioOrb
+        inputAnalyser={inputAnalyser}
+        outputAnalyser={outputAnalyser}
+        active={status === "connected"}
+      />
+      <div className="flex flex-wrap justify-center gap-3">
+        <button
+          type="button"
+          onClick={onRecord}
+          disabled={status === "connecting" || status === "connected"}
+          className="inline-flex items-center justify-center rounded-full bg-emerald-400 px-6 py-3 text-sm font-semibold uppercase tracking-[0.3em] text-zinc-950 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300 disabled:cursor-not-allowed disabled:bg-emerald-400/40"
+        >
+          {status === "connecting" ? "Connecting…" : "Start"}
+        </button>
+        <button
+          type="button"
+          onClick={onStop}
+          disabled={status === "idle" || status === "error"}
+          className="inline-flex items-center justify-center rounded-full border border-white/20 px-6 py-3 text-sm font-semibold uppercase tracking-[0.3em] text-white transition hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Stop
+        </button>
+      </div>
+      <p className="text-xs uppercase tracking-[0.35em] text-white/60">
+        Status:{" "}
+        <span
+          className={
+            status === "connected"
+              ? "text-emerald-200"
+              : status === "connecting"
+                ? "text-yellow-200"
+                : status === "error"
+                  ? "text-rose-200"
+                  : "text-white/70"
+          }
+        >
+          {status}
         </span>
-        <h1 className="text-3xl font-semibold leading-tight text-white sm:text-4xl">
-          Talk to your realtime assistant
-        </h1>
-        <p className="text-base text-zinc-300 sm:text-lg">
-          Click connect to create a short-lived client secret, share your mic,
-          and start a conversation with the{" "}
-          <span className="font-semibold text-emerald-300">{modelName}</span>{" "}
-          model.
-        </p>
-      </div>
-      <div className="flex justify-center lg:justify-end">
-        <AudioOrb
-          inputAnalyser={inputAnalyser}
-          outputAnalyser={outputAnalyser}
-          active={status === "connected"}
-        />
-      </div>
+      </p>
     </header>
   );
 };
