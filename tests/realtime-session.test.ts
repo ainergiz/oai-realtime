@@ -10,10 +10,7 @@ const restoreEnv = () => {
 };
 
 const mockResponse = (body: unknown, init: ResponseInit) =>
-  new Response(
-    typeof body === "string" ? body : JSON.stringify(body),
-    init,
-  );
+  new Response(typeof body === "string" ? body : JSON.stringify(body), init);
 
 describe("POST /api/realtime-session", () => {
   beforeAll(() => {
@@ -39,10 +36,13 @@ describe("POST /api/realtime-session", () => {
   it("bubbles up API errors gracefully", async () => {
     process.env.OPENAI_API_KEY = "test-key";
     const mockedFetch = vi.spyOn(global, "fetch").mockResolvedValue(
-      mockResponse({ error: "unauthorized" }, {
-        status: 401,
-        headers: { "content-type": "application/json" },
-      }),
+      mockResponse(
+        { error: "unauthorized" },
+        {
+          status: 401,
+          headers: { "content-type": "application/json" },
+        },
+      ),
     );
 
     const response = await POST();
@@ -89,7 +89,8 @@ describe("POST /api/realtime-session", () => {
     expect(init?.body && JSON.parse(init.body as string)).toEqual({
       session: {
         type: "realtime",
-        model: process.env.NEXT_PUBLIC_OPENAI_REALTIME_MODEL ?? "gpt-realtime-mini",
+        model:
+          process.env.NEXT_PUBLIC_OPENAI_REALTIME_MODEL ?? "gpt-realtime-mini",
       },
     });
 
@@ -127,7 +128,10 @@ describe("POST /api/realtime-session", () => {
 
     const response = await POST();
     expect(response.status).toBe(502);
-    const payload = (await response.json()) as { error: string; details: unknown };
+    const payload = (await response.json()) as {
+      error: string;
+      details: unknown;
+    };
     expect(payload.error).toContain("Failed to create realtime client secret");
     expect(payload.details).toEqual({});
   });
